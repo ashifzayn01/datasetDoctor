@@ -1,0 +1,22 @@
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+backend/venv/
+
+# Environment variables
+.env
+
+# Uploaded datasets
+backend/storage/uploads/
+
+# Test files
+backend/sample.csv
+backend/sample.txt
+large.csv
+
+# Editor settings
+.vscode/
