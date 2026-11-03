@@ -6,6 +6,7 @@ import pandas as pd
 from fastapi import FastAPI, UploadFile, File, HTTPException
 
 from app.services.profiling import profile_dataset
+from app.services.quality import run_quality_checks
 
 
 app = FastAPI(
@@ -81,6 +82,9 @@ async def upload_dataset(file: UploadFile = File(...)):
 
         # Generate dataset profile
         profile = profile_dataset(df)
+        
+        # Generate general data quality report
+        quality_report = run_quality_checks(df)
 
     except pd.errors.EmptyDataError:
         raise HTTPException(
@@ -102,10 +106,11 @@ async def upload_dataset(file: UploadFile = File(...)):
 
     # 7. Return metadata and profile
     return {
-        "filename": file.filename,
-        "rows": len(df),
-        "columns": len(df.columns),
-        "column_names": df.columns.tolist(),
-        "profile": profile,
-        "status": "uploaded"
-    }
+    "filename": file.filename,
+    "rows": len(df),
+    "columns": len(df.columns),
+    "column_names": df.columns.tolist(),
+    "profile": profile,
+    "quality_report": quality_report,
+    "status": "uploaded"
+}
