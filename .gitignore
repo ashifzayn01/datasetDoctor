@@ -1,22 +1,30 @@
-
 # Python cache
 __pycache__/
-*.pyc
+*.py[cod]
 
 # Virtual environments
 venv/
 backend/venv/
 
-# Environment variables
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
 
 # Uploaded datasets
 backend/storage/uploads/
 
-# Test files
-backend/sample.csv
-backend/sample.txt
+# Large local datasets
 large.csv
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Editor settings
 .vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db

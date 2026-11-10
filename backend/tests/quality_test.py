@@ -1,4 +1,3 @@
-
 import pandas as pd
 
 from app.services.quality import (
@@ -7,13 +6,6 @@ from app.services.quality import (
     check_class_imbalance,
     check_suspicious_columns,
     run_quality_checks
-)
-
-from app.services.quality import (
-    check_missing_values,
-    check_duplicate_rows,
-    check_class_imbalance,
-    check_suspicious_columns
 )
 
 

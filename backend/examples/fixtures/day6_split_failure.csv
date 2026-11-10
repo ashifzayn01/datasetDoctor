@@ -1,0 +1,13 @@
+age,salary,city,label
+20,20000,Delhi,A
+21,21000,Mumbai,A
+22,22000,Pune,B
+23,23000,Delhi,B
+24,24000,Mumbai,C
+25,25000,Pune,C
+26,26000,Delhi,D
+27,27000,Mumbai,D
+28,28000,Pune,E
+29,29000,Delhi,E
+30,30000,Mumbai,F
+31,31000,Pune,F

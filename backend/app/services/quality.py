@@ -58,7 +58,7 @@ def check_class_imbalance(df, target_column):
             f"Target column '{target_column}' not found"
         )
 
-    class_counts = df[target_column].value_counts()
+    class_counts = df[target_column].dropna().value_counts()
 
     total_records = class_counts.sum()
 

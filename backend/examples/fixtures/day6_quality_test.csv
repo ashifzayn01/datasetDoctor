@@ -1,0 +1,11 @@
+id,age,salary,city,purchased
+1,22,25000,Delhi,No
+2,25,,Mumbai,No
+3,28,35000,Pune,Yes
+4,,45000,Delhi,Yes
+5,35,50000,Mumbai,Yes
+6,24,28000,Pune,No
+7,40,65000,Delhi,Yes
+8,29,,Mumbai,No
+9,45,75000,Pune,Yes
+10,22,25000,Delhi,No

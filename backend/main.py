@@ -1,12 +1,14 @@
 
 import csv
-from io import BytesIO
+from io import BytesIO, StringIO
 
 import pandas as pd
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.services.profiling import profile_dataset
 from app.services.quality import run_quality_checks
+from app.services.ml_experiment import run_experiment
 
 
 app = FastAPI(
@@ -16,21 +18,20 @@ app = FastAPI(
 )
 
 
-@app.get("/")
-def home():
-    return {"message": "Welcome to Dataset Doctor API"}
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-@app.get("/health")
-def health_check():
-    return {
-        "status": "healthy",
-        "application": "Dataset Doctor"
-    }
-
-
-@app.post("/api/datasets/upload")
-async def upload_dataset(file: UploadFile = File(...)):
+# Shared CSV validation and loading function
+async def load_csv_file(file: UploadFile):
 
     # 1. Validate filename and extension
     if not file.filename or not file.filename.lower().endswith(".csv"):
@@ -59,32 +60,36 @@ async def upload_dataset(file: UploadFile = File(...)):
             detail="Uploaded file is empty"
         )
 
-    # 6. Parse CSV and generate profile
+    # 6. Parse and validate CSV
     try:
-        # Decode CSV content
         decoded_contents = contents.decode("utf-8-sig")
 
-        # Read original CSV headers before Pandas modifies them
-        csv_reader = csv.reader(decoded_contents.splitlines())
+        # Check CSV headers
+        csv_reader = csv.reader(StringIO(decoded_contents))
         headers = next(csv_reader, [])
 
-        # Check for duplicate column names
-        if len(headers) != len(set(headers)):
-            raise ValueError(
-                "Duplicate column names found in CSV"
-            )
+        if not headers:
+            raise ValueError("CSV must contain column headers")
 
-        # Read CSV using Pandas
+        # Reject blank column names
+        if any(not header.strip() for header in headers):
+            raise ValueError("CSV contains blank column names")
+
+        # Reject duplicate column names
+        if len(headers) != len(set(headers)):
+            raise ValueError("Duplicate column names found in CSV")
+
+        # Load CSV into DataFrame
         df = pd.read_csv(BytesIO(contents))
 
         if len(df.columns) == 0:
             raise ValueError("CSV must contain columns")
 
-        # Generate dataset profile
-        profile = profile_dataset(df)
-        
-        # Generate general data quality report
-        quality_report = run_quality_checks(df)
+        # Reject datasets without data rows
+        if df.empty:
+            raise ValueError("CSV must contain at least one data row")
+
+        return df
 
     except pd.errors.EmptyDataError:
         raise HTTPException(
@@ -104,13 +109,68 @@ async def upload_dataset(file: UploadFile = File(...)):
             detail=str(error)
         )
 
-    # 7. Return metadata and profile
+
+@app.get("/")
+def home():
+    return {"message": "Welcome to Dataset Doctor API"}
+
+
+@app.get("/health")
+def health_check():
     return {
-    "filename": file.filename,
-    "rows": len(df),
-    "columns": len(df.columns),
-    "column_names": df.columns.tolist(),
-    "profile": profile,
-    "quality_report": quality_report,
-    "status": "uploaded"
-}
+        "status": "healthy",
+        "application": "Dataset Doctor"
+    }
+
+
+# Dataset upload and profiling endpoint
+@app.post("/api/datasets/upload")
+async def upload_dataset(file: UploadFile = File(...)):
+
+    df = await load_csv_file(file)
+
+    profile = profile_dataset(df)
+    quality_report = run_quality_checks(df)
+
+    return {
+        "filename": file.filename,
+        "rows": len(df),
+        "columns": len(df.columns),
+        "column_names": df.columns.tolist(),
+        "profile": profile,
+        "quality_report": quality_report,
+        "status": "uploaded"
+    }
+
+
+# ML experiment endpoint
+@app.post("/api/experiments/run")
+async def run_ml_experiment(
+    file: UploadFile = File(...),
+    target_column: str = Form(...),
+    task_type: str = Form(...)
+):
+
+    # 1. Load and validate CSV
+    df = await load_csv_file(file)
+
+    # 2. Run ML experiments
+    try:
+        results = run_experiment(
+            df=df,
+            target_column=target_column,
+            task_type=task_type
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+
+    # 3. Return experiment results
+    return {
+        "filename": file.filename,
+        "status": "completed",
+        "experiment_results": results
+    }
