@@ -1,5 +1,5 @@
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://dataset-doctor-api-72p5.onrender.com";
 
 // DOM elements
 const apiStatus = document.getElementById("apiStatus");
